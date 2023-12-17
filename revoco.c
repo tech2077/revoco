@@ -156,7 +156,8 @@ static void send_report(int fd, u8 id, const u8 *buf, int n)
 		send_buf[i] = buf[i-1];
 	}
 
-	res = write(fd, send_buf, n+1);
+	res = write(fd, send_buf, n);
+	free(send_buf);
 
 	if (res < 0) {
 		printf("Error: %d\n", errno);
@@ -167,8 +168,7 @@ static void send_report(int fd, u8 id, const u8 *buf, int n)
 static void query_report(int fd, u8 id, u8 *buf, int n)
 {
 	int res;
-	res = read(fd, buf, n+1);
-	buf = buf+1;
+	res = read(fd, buf, n);
 	if (res < 0) {
 		perror("read");
 	}
@@ -184,13 +184,14 @@ static void mx_cmd(int fd, u8 b1, u8 b2, u8 b3)
 static int mx_query(int fd, u8 b1, u8 *res)
 {
 	u8 buf[6] = { first_byte, 0x81, b1, 0, 0, 0 };
+	u8 shifted_res[7];
 	int i;
 
 	send_report(fd, 0x10, buf, 6);
-	query_report(fd, 0x10, res, 6);
+	query_report(fd, 0x10, shifted_res, 7);
 
 	for (int i = 0; i < 6; i++)
-		res[i] = res[i+1];
+		res[i] = shifted_res[i+1];
 
 	if ((
 		(res[0] != 0x02 && res[0] != 0x01 && res[0] != 0x00) ||
